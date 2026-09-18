@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: .
+    ports:
+      - 8080
+    depends_on:
+      - mongo
+    restart: on-failure
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/ops-pilot
+    networks:
+      - opspilot
+
+  mongo:
+    image: 'mongo:7.0'
+    environment:
+      - 'MONGO_INITDB_DATABASE=mydatabase'
+      - 'MONGO_INITDB_ROOT_PASSWORD=secret'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
+    ports:
+      - '27017'
+    networks:
+      - opspilot
+
+networks:
+  opspilot:
+    driver: bridge
