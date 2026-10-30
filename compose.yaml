@@ -1,28 +1,76 @@
 services:
+
+  # ─────────────────────────────── PostgreSQL ──────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: opspilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"           # expose to host so you can connect with pgAdmin/psql
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - opspilot
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────── Backend ─────────────────────────────────────
   backend:
     build:
-      context: .
+      context: .          # uses ./Dockerfile in project root
+      dockerfile: Dockerfile
+    container_name: opspilot-backend
+    restart: unless-stopped
     ports:
-      - 8080
+      - "8080:8080"       # expose to host for direct API access / testing
     depends_on:
-      - mongo
-    restart: on-failure
+      postgres:
+        condition: service_healthy
     environment:
-      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/ops-pilot
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      SERVER_PORT: "8080"
+      SPRING_JACKSON_DEFAULT_PROPERTY_INCLUSION: non_null
+    networks:
+      - opspilot
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s   # give Spring Boot time to start and seed data
+
+  # ─────────────────────────────── Frontend ────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend   # uses ./frontend/Dockerfile
+      dockerfile: Dockerfile
+    container_name: opspilot-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"           # open http://localhost:3000 in your browser
+    depends_on:
+      backend:
+        condition: service_healthy
     networks:
       - opspilot
 
-  mongo:
-    image: 'mongo:7.0'
-    environment:
-      - 'MONGO_INITDB_DATABASE=mydatabase'
-      - 'MONGO_INITDB_ROOT_PASSWORD=secret'
-      - 'MONGO_INITDB_ROOT_USERNAME=root'
-    ports:
-      - '27017'
-    networks:
-      - opspilot
+# ─────────────────────────────── Volumes & Networks ──────────────────────────
+volumes:
+  postgres_data:
+    name: opspilot_postgres_data
 
 networks:
   opspilot:
     driver: bridge
+    name: opspilot_network

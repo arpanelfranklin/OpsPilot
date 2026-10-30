@@ -1,0 +1,86 @@
+import { Incident } from '../types/incident';
+
+export const mockIncidents: Incident[] = [
+  {
+    id: 'INC-102',
+    numericId: 102,
+    service: 'chat-backend',
+    namespace: 'chat-app',
+    problem: 'CrashLoopBackOff',
+    severity: 'HIGH',
+    status: 'Investigating',
+    detectedAt: '10:42',
+    diagnosis: {
+      summary: 'Backend pods are repeatedly restarting. The latest container termination reason is OOMKilled.',
+      rootCause: 'Container process memory footprint exceeded the hard limit of 512Mi under burst WebSocket traffic.',
+      recommendedAction: 'Increase memory limit to 1024Mi and profile active heap allocations in connection handler.',
+      confidence: 94,
+      evidence: [
+        { label: 'Restarts', value: '7 times in last 15m', type: 'metric', detail: 'Exit code 137 (SIGKILL)' },
+        { label: 'Memory usage', value: '98% (502Mi / 512Mi)', type: 'metric', detail: 'Spike recorded at 10:41:45 UTC' },
+        { label: 'Memory limit', value: '512Mi (ResourceQuota: strict)', type: 'config', detail: 'cgroups v2 limit enforced' },
+        { label: 'Last termination', value: 'OOMKilled', type: 'event', detail: 'Kubelet kernel invoked oom_kill_process' },
+      ],
+    },
+    timeline: [
+      { id: 't1', time: '10:42', title: 'Incident detected', description: 'Pod chat-backend-7c9b846-9xk2p entered CrashLoopBackOff', type: 'detection' },
+      { id: 't2', time: '10:43', title: 'Kubernetes logs collected', description: 'Pulled 1500 lines of previous container logs and dmesg outputs', type: 'log_collected' },
+      { id: 't3', time: '10:44', title: 'AI diagnosis generated', description: 'Correlation engine flagged memory threshold breach and SIGKILL exit', type: 'diagnosis' },
+      { id: 't4', time: '10:45', title: 'Remediation recommended', description: 'Suggested updating resources.limits.memory to 1024Mi', type: 'recommendation' },
+      { id: 't5', time: '10:45', title: 'Remediation awaiting approval', description: 'SRE intervention required before deployment patch roll-out', type: 'approval' },
+    ],
+  },
+  {
+    id: 'INC-101',
+    numericId: 101,
+    service: 'chat-backend',
+    namespace: 'chat-app',
+    problem: 'High memory usage',
+    severity: 'MEDIUM',
+    status: 'Resolved',
+    detectedAt: '08:21',
+    resolvedAt: '08:54',
+    diagnosis: {
+      summary: 'Pod memory usage crossed 85% warning threshold following bulk socket connection reconnects.',
+      rootCause: 'Garbage collector lag during transient connection surge.',
+      recommendedAction: 'Enabled V8 aggressive memory release flags and auto-cleared socket session buffers.',
+      confidence: 88,
+      evidence: [
+        { label: 'Peak Memory', value: '445Mi / 512Mi (87%)', type: 'metric' },
+        { label: 'Connection Surge', value: '+4,200 socket conns in 3m', type: 'event' },
+        { label: 'GC Pause', value: '180ms latency spike', type: 'metric' },
+      ],
+    },
+    timeline: [
+      { id: 't101-1', time: '08:21', title: 'High memory alert triggered', description: 'Prometheus alert: PodMemorySaturationWarning', type: 'detection' },
+      { id: 't101-2', time: '08:25', title: 'AI Analysis initiated', description: 'Evaluated heap dumps and inbound socket rates', type: 'diagnosis' },
+      { id: 't101-3', time: '08:35', title: 'Memory stabilized', description: 'Traffic leveled off; memory settled at 58%', type: 'action' },
+      { id: 't101-4', time: '08:54', title: 'Incident resolved', description: 'Alert cleared automatically', type: 'action' },
+    ],
+  },
+  {
+    id: 'INC-099',
+    numericId: 99,
+    service: 'auth-service',
+    namespace: 'security',
+    problem: 'Readiness Probe Failed',
+    severity: 'LOW',
+    status: 'Resolved',
+    detectedAt: 'Yesterday 19:15',
+    resolvedAt: 'Yesterday 19:22',
+    diagnosis: {
+      summary: 'Readiness probe timed out due to transient PostgreSQL connection pool saturation.',
+      rootCause: 'DB pool exhausted for 4 seconds during scheduled maintenance batch.',
+      recommendedAction: 'Increased connection pool max size to 50.',
+      confidence: 96,
+      evidence: [
+        { label: 'Probe Failure', value: 'HTTP 503 on /health/ready', type: 'event' },
+        { label: 'DB Pool Queue', value: '25 waiting threads', type: 'metric' },
+      ],
+    },
+    timeline: [
+      { id: 't99-1', time: '19:15', title: 'Probe failure alert', description: 'Readiness probe failed 3 consecutive checks', type: 'detection' },
+      { id: 't99-2', time: '19:22', title: 'Traffic re-routed & resolved', description: 'Replica caught up and resumed accepting traffic', type: 'action' },
+    ],
+  },
+];

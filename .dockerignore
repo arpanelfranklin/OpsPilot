@@ -1,0 +1,11 @@
+.git
+.gitignore
+.idea
+*.iml
+target/
+frontend/node_modules/
+frontend/dist/
+.DS_Store
+*.log
+compose.yaml
+k8s/
