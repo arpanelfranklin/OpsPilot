@@ -52,8 +52,8 @@ public class IncidentService {
     }
 
     private IncidentDTO toDTO(Incident incident) {
-        List<IncidentDTO.DiagnosisDTO.EvidenceDTO> evidence = parseJson(incident.getEvidenceJson(),
-                new TypeReference<List<IncidentDTO.DiagnosisDTO.EvidenceDTO>>() {});
+        List<IncidentDTO.EvidenceDTO> evidence = parseJson(incident.getEvidenceJson(),
+                new TypeReference<List<IncidentDTO.EvidenceDTO>>() {});
         List<IncidentDTO.TimelineEventDTO> timeline = parseJson(incident.getTimelineJson(),
                 new TypeReference<List<IncidentDTO.TimelineEventDTO>>() {});
 
