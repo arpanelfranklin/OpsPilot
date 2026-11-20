@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-failed-worker
+  namespace: opspilot-demo
+  labels:
+    app: demo-failed-worker
+    tier: worker
+    demo: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-failed-worker
+  template:
+    metadata:
+      labels:
+        app: demo-failed-worker
+        tier: worker
+    spec:
+      containers:
+        - name: worker
+          # busybox:1.36 — small, pinned, reputable image
+          image: busybox:1.36
+          # Script deliberately simulates a failed DB connection and exits non-zero
+          # This causes Kubernetes to restart the container → CrashLoopBackOff
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "[WORKER] Starting demo-worker v1.0.0"
+              echo "[WORKER] Loading configuration..."
+              sleep 2
+              echo "[WORKER] Attempting to connect to database at db.internal:5432"
+              sleep 1
+              echo "[ERROR]  Connection refused: dial tcp db.internal:5432: connect: connection refused"
+              echo "[ERROR]  Database connection failed after 3 retries"
+              echo "[WORKER] Fatal: cannot continue without database. Exiting."
+              exit 1
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"

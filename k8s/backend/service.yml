@@ -3,11 +3,14 @@ kind: Service
 metadata:
   name: opspilot-backend
   namespace: opspilot
+  labels:
+    app: opspilot-backend
 spec:
-  type: ClusterIp
+  type: ClusterIP
   selector:
     app: opspilot-backend
   ports:
-    - protocol: TCP
-      port: 80 
-      targetPort: 8080  
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080

@@ -5,6 +5,7 @@ metadata:
   namespace: opspilot
   labels:
     app: opspilot-backend
+    tier: backend
 spec:
   replicas: 2
   selector:
@@ -14,6 +15,11 @@ spec:
     metadata:
       labels:
         app: opspilot-backend
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: opspilot-backend
@@ -22,18 +28,51 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
+              name: http
           env:
-            - name: SPRING_DATA_MONGODB_URI
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://opspilot-postgres:5432/postgres"
+            - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: opspilot-secrets
-                  key: mongodb-uri
+                  key: postgres-username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: opspilot-secrets
+                  key: postgres-password
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_JPA_SHOW_SQL
+              value: "false"
+            - name: SERVER_PORT
+              value: "8080"
+            - name: SPRING_JACKSON_DEFAULT_PROPERTY_INCLUSION
+              value: "non_null"
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "health,info,prometheus,metrics"
+            - name: MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED
+              value: "true"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
           resources:
             requests:
               cpu: "250m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
               memory: "512Mi"
-          
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
       restartPolicy: Always

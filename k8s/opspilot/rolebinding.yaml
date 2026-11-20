@@ -1,0 +1,33 @@
+# ClusterRoleBinding: nodes + namespaces discovery
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: opspilot-cluster-reader-binding
+  labels:
+    app: opspilot
+    component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: opspilot-cluster-reader
+subjects:
+  - kind: ServiceAccount
+    name: opspilot-reader
+    namespace: opspilot
+---
+# ClusterRoleBinding: namespaced resources (all namespaces — required for multi-namespace exploration)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: opspilot-namespace-reader-binding
+  labels:
+    app: opspilot
+    component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: opspilot-namespace-reader
+subjects:
+  - kind: ServiceAccount
+    name: opspilot-reader
+    namespace: opspilot
